@@ -4,6 +4,7 @@ import {
   obtenerTareas,
   crearTareaRemota,
   actualizarTareaRemota,
+  eliminarTareaRemota,
 } from '../services/tareasService'
 
 function useTareas() {
@@ -14,12 +15,13 @@ function useTareas() {
   const [agregando, setAgregando] = useState(false)
   const [errorOperacion, setErrorOperacion] = useState(null)
 
-  // Control de tareas que se están actualizando.
   const [actualizandoIds, setActualizandoIds] = useState([])
-  const actualizandoRef = useRef(new Set())
-  const creandoRef = useRef(false)
+  const [eliminandoIds, setEliminandoIds] = useState([])
 
-  // GET: cargar las primeras diez tareas.
+  const creandoRef = useRef(false)
+  const actualizandoRef = useRef(new Set())
+
+  // GET: cargar las primeras 10 tareas.
   useEffect(() => {
     const controller = new AbortController()
 
@@ -51,7 +53,8 @@ function useTareas() {
 
   // POST: crear una tarea.
   async function agregarTarea(titulo) {
-    const tituloLimpio = titulo.trim()
+    const tituloLimpio =
+      typeof titulo === 'string' ? titulo.trim() : ''
 
     if (!tituloLimpio) {
       setErrorOperacion(
@@ -60,7 +63,7 @@ function useTareas() {
       return false
     }
 
-    if (creandoRef.current) {
+    if (creandoRef.current || cargando) {
       return false
     }
 
@@ -79,7 +82,6 @@ function useTareas() {
       }
 
       setTareas(previas => [...previas, nuevaTarea])
-
       return true
     } catch (err) {
       setErrorOperacion(
@@ -92,7 +94,7 @@ function useTareas() {
     }
   }
 
-  // PATCH: alternar entre pendiente y completada.
+  // PATCH: completar o desmarcar una tarea.
   async function alternarTarea(id) {
     const tarea = tareas.find(item => item.id === id)
 
@@ -101,7 +103,6 @@ function useTareas() {
       return false
     }
 
-    // Impedir operaciones duplicadas sobre la misma tarea.
     if (actualizandoRef.current.has(id)) {
       return false
     }
@@ -113,14 +114,12 @@ function useTareas() {
     const nuevoEstado = !tarea.completada
 
     try {
-      // Solo las tareas originales tienen recurso remoto.
       if (tarea.remotoId !== null) {
         await actualizarTareaRemota(tarea.remotoId, {
           completada: nuevoEstado,
         })
       }
 
-      // Actualización inmutable después del éxito.
       setTareas(previas =>
         previas.map(item =>
           item.id === id
@@ -131,20 +130,17 @@ function useTareas() {
 
       return true
     } catch (err) {
-      // No cambiar el estado cuando falla la API.
       setErrorOperacion(
         err.message || 'No fue posible actualizar la tarea'
       )
       return false
     } finally {
       actualizandoRef.current.delete(id)
-
       setActualizandoIds(previas =>
         previas.filter(itemId => itemId !== id)
       )
     }
   }
-
 
   // PATCH: editar el título de una tarea.
   async function editarTarea(id, nuevoTitulo) {
@@ -167,12 +163,10 @@ function useTareas() {
       return false
     }
 
-    // Evitar editar una tarea que ya se está actualizando.
     if (actualizandoRef.current.has(id)) {
       return false
     }
 
-    // No enviar solicitudes si el título no cambió.
     if (tarea.titulo === tituloLimpio) {
       setErrorOperacion(null)
       return true
@@ -183,14 +177,12 @@ function useTareas() {
     setErrorOperacion(null)
 
     try {
-      // Las tareas originales se actualizan mediante PATCH.
       if (tarea.remotoId !== null) {
         await actualizarTareaRemota(tarea.remotoId, {
           titulo: tituloLimpio,
         })
       }
 
-      // Actualizar únicamente la tarea seleccionada.
       setTareas(previas =>
         previas.map(item =>
           item.id === id
@@ -207,13 +199,56 @@ function useTareas() {
       return false
     } finally {
       actualizandoRef.current.delete(id)
-
       setActualizandoIds(previas =>
         previas.filter(itemId => itemId !== id)
       )
     }
   }
 
+  // DELETE: eliminar una tarea.
+  async function eliminarTarea(id) {
+    const tarea = tareas.find(item => item.id === id)
+
+    if (!tarea) {
+      setErrorOperacion('No se encontró la tarea')
+      return false
+    }
+
+    // Evitar eliminar mientras se edita, completa
+    // o elimina la misma tarea.
+    if (actualizandoRef.current.has(id)) {
+      return false
+    }
+
+    actualizandoRef.current.add(id)
+    setEliminandoIds(previas => [...previas, id])
+    setErrorOperacion(null)
+
+    try {
+      // Las tareas originales requieren DELETE remoto.
+      if (tarea.remotoId !== null) {
+        await eliminarTareaRemota(tarea.remotoId)
+      }
+
+      // Eliminar solamente la tarea seleccionada.
+      setTareas(previas =>
+        previas.filter(item => item.id !== id)
+      )
+
+      return true
+    } catch (err) {
+      // Si falla DELETE, conservamos la tarea.
+      setErrorOperacion(
+        err.message || 'No fue posible eliminar la tarea'
+      )
+      return false
+    } finally {
+      actualizandoRef.current.delete(id)
+      setEliminandoIds(previas =>
+        previas.filter(itemId => itemId !== id)
+      )
+    }
+  }
 
   return {
     tareas,
@@ -222,9 +257,11 @@ function useTareas() {
     agregando,
     errorOperacion,
     actualizandoIds,
+    eliminandoIds,
     agregarTarea,
     alternarTarea,
     editarTarea,
+    eliminarTarea,
   }
 }
 
