@@ -5,10 +5,10 @@ export default function TaskFilters({
   onCambiarBusqueda,
 }) {
   const opcionesFiltro = [
-    { id: 'todas', etiqueta: 'Todas' },
-    { id: 'pendientes', etiqueta: 'Pendientes' },
-    { id: 'completadas', etiqueta: 'Completadas' },
-  ];
+  { id: 'todas', etiqueta: 'Todas' },
+  { id: 'pendientes', etiqueta: 'Pendientes' },
+  { id: 'completadas', etiqueta: 'Completadas' },
+];
 
   return (
     <div className="filters-container card">
@@ -16,7 +16,7 @@ export default function TaskFilters({
         <input
           type="text"
           className="input-busqueda"
-          placeholder="🔍 Buscar tarea por título..."
+          placeholder=" Buscar tarea por título..."
           value={busqueda}
           onChange={(e) => onCambiarBusqueda && onCambiarBusqueda(e.target.value)}
         />
