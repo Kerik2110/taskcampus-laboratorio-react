@@ -145,6 +145,76 @@ function useTareas() {
     }
   }
 
+
+  // PATCH: editar el título de una tarea.
+  async function editarTarea(id, nuevoTitulo) {
+    const tituloLimpio =
+      typeof nuevoTitulo === 'string'
+        ? nuevoTitulo.trim()
+        : ''
+
+    if (!tituloLimpio) {
+      setErrorOperacion(
+        'El título de la tarea no puede estar vacío'
+      )
+      return false
+    }
+
+    const tarea = tareas.find(item => item.id === id)
+
+    if (!tarea) {
+      setErrorOperacion('No se encontró la tarea')
+      return false
+    }
+
+    // Evitar editar una tarea que ya se está actualizando.
+    if (actualizandoRef.current.has(id)) {
+      return false
+    }
+
+    // No enviar solicitudes si el título no cambió.
+    if (tarea.titulo === tituloLimpio) {
+      setErrorOperacion(null)
+      return true
+    }
+
+    actualizandoRef.current.add(id)
+    setActualizandoIds(previas => [...previas, id])
+    setErrorOperacion(null)
+
+    try {
+      // Las tareas originales se actualizan mediante PATCH.
+      if (tarea.remotoId !== null) {
+        await actualizarTareaRemota(tarea.remotoId, {
+          titulo: tituloLimpio,
+        })
+      }
+
+      // Actualizar únicamente la tarea seleccionada.
+      setTareas(previas =>
+        previas.map(item =>
+          item.id === id
+            ? { ...item, titulo: tituloLimpio }
+            : item
+        )
+      )
+
+      return true
+    } catch (err) {
+      setErrorOperacion(
+        err.message || 'No fue posible editar la tarea'
+      )
+      return false
+    } finally {
+      actualizandoRef.current.delete(id)
+
+      setActualizandoIds(previas =>
+        previas.filter(itemId => itemId !== id)
+      )
+    }
+  }
+
+
   return {
     tareas,
     cargando,
@@ -154,6 +224,7 @@ function useTareas() {
     actualizandoIds,
     agregarTarea,
     alternarTarea,
+    editarTarea,
   }
 }
 

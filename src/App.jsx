@@ -18,19 +18,28 @@ function App() {
     actualizandoIds,
     agregarTarea,
     alternarTarea,
+    editarTarea,
   } = useTareas()
 
+  // Estados de filtros, busqueda y creacion.
   const [filtro, setFiltro] = useState('todas')
   const [busqueda, setBusqueda] = useState('')
   const [tituloNuevo, setTituloNuevo] = useState('')
 
-  // Estadísticas derivadas del estado principal.
+  // Estados para editar tareas.
+  const [editandoId, setEditandoId] = useState(null)
+  const [borradorTitulo, setBorradorTitulo] = useState('')
+
+  // Estadisticas calculadas desde el estado principal.
   const total = tareas.length
+
   const completadas = tareas.filter(
     tarea => tarea.completada
   ).length
+
   const pendientes = total - completadas
 
+  // Aplicar filtros y busqueda.
   const tareasVisibles = tareas.filter(tarea => {
     const cumpleFiltro =
       filtro === 'todas' ||
@@ -44,6 +53,7 @@ function App() {
     return cumpleFiltro && cumpleBusqueda
   })
 
+  // Crear una nueva tarea mediante POST.
   async function handleCrear(event) {
     event.preventDefault()
 
@@ -54,10 +64,33 @@ function App() {
     }
   }
 
+  // Iniciar la edicion de una tarea.
+  function iniciarEdicion(tarea) {
+    setEditandoId(tarea.id)
+    setBorradorTitulo(tarea.titulo)
+  }
+
+  // Cancelar la edicion sin guardar cambios.
+  function cancelarEdicion() {
+    setEditandoId(null)
+    setBorradorTitulo('')
+  }
+
+  // Guardar un nuevo titulo mediante el hook.
+  async function guardarEdicion(id) {
+    const guardada = await editarTarea(id, borradorTitulo)
+
+    if (guardada) {
+      cancelarEdicion()
+    }
+  }
+
+  // Accion original del proyecto.
   function reviewTasks() {
     alert(`Tienes ${pendientes} tareas pendientes por revisar`)
   }
 
+  // Identificar las tareas creadas localmente.
   const tareasLocales = tareas.filter(
     tarea => tarea.remotoId === null
   )
@@ -69,8 +102,11 @@ function App() {
         description="Gestor de tareas académicas"
       />
 
+      {/* Estado de conexion con JSONPlaceholder */}
       {cargando && (
-        <p role="status">Cargando tareas desde la API...</p>
+        <p role="status">
+          Cargando tareas desde la API...
+        </p>
       )}
 
       {error && (
@@ -85,6 +121,7 @@ function App() {
         </p>
       )}
 
+      {/* Resumen de tareas */}
       <TaskSummary
         total={pendientes}
         pendientes={pendientes}
@@ -92,6 +129,7 @@ function App() {
         mostrando={tareasVisibles.length}
       />
 
+      {/* Componente original, pendiente de integracion */}
       <TaskList
         tareas={tareasVisibles}
         filtro={filtro}
@@ -99,11 +137,12 @@ function App() {
         onCambiarFiltro={setFiltro}
         onCambiarBusqueda={setBusqueda}
         onCompletar={alternarTarea}
+        onEditar={editarTarea}
         cargando={cargando}
         error={error}
       />
 
-      {/* Formulario temporal de la tarea 5 */}
+      {/* Prueba temporal: creacion de tareas */}
       <section className="card">
         <h2 className="section-title">
           Prueba de creación de tareas
@@ -126,7 +165,7 @@ function App() {
             }
             placeholder="Escribe una nueva tarea"
             aria-label="Título de la nueva tarea"
-            disabled={agregando}
+            disabled={agregando || cargando}
             style={{
               padding: '10px',
               flex: '1 1 220px',
@@ -138,7 +177,7 @@ function App() {
           <button
             type="submit"
             className="task-button"
-            disabled={agregando}
+            disabled={agregando || cargando}
           >
             {agregando ? 'Guardando...' : 'Agregar tarea'}
           </button>
@@ -150,7 +189,10 @@ function App() {
 
             <ul className="task-list">
               {tareasLocales.map(tarea => (
-                <li key={tarea.id} className="task-item">
+                <li
+                  key={tarea.id}
+                  className="task-item"
+                >
                   {tarea.titulo}
                 </li>
               ))}
@@ -159,17 +201,19 @@ function App() {
         )}
       </section>
 
-      {/* Sección temporal para comprobar PATCH */}
+      {/* Prueba temporal: cambio de estado y edicion */}
       <section className="card">
         <h2 className="section-title">
-          Prueba de cambio de estado
+          Prueba de cambio de estado y edición
         </h2>
 
         <p style={{ marginBottom: '16px' }}>
-          Tareas pendientes: {pendientes} |
-          {' '}Completadas: {completadas}
+          Tareas pendientes: {pendientes}
+          {' | '}
+          Completadas: {completadas}
         </p>
 
+        {/* Mostrar errores de operaciones */}
         {errorOperacion && (
           <p
             role="alert"
@@ -188,29 +232,108 @@ function App() {
               actualizandoIds.includes(tarea.id)
 
             return (
-              <li key={tarea.id} className="task-item">
-                <span>
-                  {tarea.titulo}
-                  {' — '}
-                  <strong>
-                    {tarea.completada
-                      ? 'Completada'
-                      : 'Pendiente'}
-                  </strong>
-                </span>
+              <li
+                key={tarea.id}
+                className="task-item"
+              >
+                {editandoId === tarea.id ? (
+                  <form
+                    onSubmit={event => {
+                      event.preventDefault()
+                      guardarEdicion(tarea.id)
+                    }}
+                    style={{
+                      display: 'flex',
+                      gap: '8px',
+                      flex: 1,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      type="text"
+                      value={borradorTitulo}
+                      onChange={event =>
+                        setBorradorTitulo(event.target.value)
+                      }
+                      onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                          cancelarEdicion()
+                        }
+                      }}
+                      disabled={actualizando}
+                      aria-label="Editar título de tarea"
+                      style={{
+                        flex: 1,
+                        minWidth: '160px',
+                        padding: '8px',
+                      }}
+                    />
 
-                <button
-                  type="button"
-                  className="task-button-secondary"
-                  disabled={actualizando}
-                  onClick={() => alternarTarea(tarea.id)}
-                >
-                  {actualizando
-                    ? 'Actualizando...'
-                    : tarea.completada
-                      ? 'Marcar pendiente'
-                      : 'Completar'}
-                </button>
+                    <button
+                      type="submit"
+                      className="task-button-secondary"
+                      disabled={actualizando}
+                    >
+                      {actualizando
+                        ? 'Guardando...'
+                        : 'Guardar'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="task-button-secondary"
+                      onClick={cancelarEdicion}
+                      disabled={actualizando}
+                    >
+                      Cancelar
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <span>
+                      {tarea.titulo}
+                      {' — '}
+                      <strong>
+                        {tarea.completada
+                          ? 'Completada'
+                          : 'Pendiente'}
+                      </strong>
+                    </span>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '8px',
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="task-button-secondary"
+                        onClick={() => iniciarEdicion(tarea)}
+                        disabled={actualizando}
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        type="button"
+                        className="task-button-secondary"
+                        disabled={actualizando}
+                        onClick={() =>
+                          alternarTarea(tarea.id)
+                        }
+                      >
+                        {actualizando
+                          ? 'Actualizando...'
+                          : tarea.completada
+                            ? 'Marcar pendiente'
+                            : 'Completar'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </li>
             )
           })}
