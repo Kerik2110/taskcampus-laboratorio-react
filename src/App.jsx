@@ -9,27 +9,28 @@ import ActionButton from './components/ActionButton'
 import useTareas from './hooks/useTareas'
 
 function App() {
-  // Las tareas ahora provienen de nuestro hook.
   const {
     tareas,
     setTareas,
     cargando,
     error,
+    agregando,
+    errorOperacion,
+    agregarTarea,
   } = useTareas()
 
   const [filtro, setFiltro] = useState('todas')
   const [busqueda, setBusqueda] = useState('')
+  const [tituloNuevo, setTituloNuevo] = useState('')
 
-  // Contadores derivados de las tareas actuales.
+  // Estadísticas derivadas.
   const total = tareas.length
-
   const completadas = tareas.filter(
     tarea => tarea.completada
   ).length
-
   const pendientes = total - completadas
 
-  // Aplicamos filtros y búsqueda simultáneamente.
+  // Filtrar y buscar simultáneamente.
   const tareasVisibles = tareas.filter(tarea => {
     const cumpleFiltro =
       filtro === 'todas' ||
@@ -43,24 +44,37 @@ function App() {
     return cumpleFiltro && cumpleBusqueda
   })
 
-  // Cambio de estado local provisional.
-  // En la tarea 6 lo conectaremos con PATCH.
+  // Completar tareas: función provisional.
   function handleCompletar(id) {
     setTareas(previas =>
       previas.map(tarea =>
         tarea.id === id
-          ? {
-              ...tarea,
-              completada: !tarea.completada,
-            }
+          ? { ...tarea, completada: !tarea.completada }
           : tarea
       )
     )
   }
 
+  // Ejecutar la creación mediante el hook.
+  async function handleCrear(event) {
+    event.preventDefault()
+
+    const creada = await agregarTarea(tituloNuevo)
+
+    // Limpiar el campo solamente cuando POST tenga éxito.
+    if (creada) {
+      setTituloNuevo('')
+    }
+  }
+
   function reviewTasks() {
     alert(`Tienes ${pendientes} tareas pendientes por revisar`)
   }
+
+  // Tareas creadas localmente para comprobar POST.
+  const tareasLocales = tareas.filter(
+    tarea => tarea.remotoId === null
+  )
 
   return (
     <main className="app-container">
@@ -69,7 +83,6 @@ function App() {
         description="Gestor de tareas académicas"
       />
 
-      {/* Información sobre la conexión con la API */}
       {cargando && (
         <p role="status">Cargando tareas desde la API...</p>
       )}
@@ -82,7 +95,7 @@ function App() {
 
       {!cargando && !error && (
         <p role="status">
-          Conexión exitosa: {total} tareas cargadas desde la API.
+          Conexión exitosa: {total} tareas disponibles.
         </p>
       )}
 
@@ -103,6 +116,72 @@ function App() {
         cargando={cargando}
         error={error}
       />
+
+      {/* Formulario temporal para comprobar la tarea 5 */}
+      <section className="card">
+        <h2 className="section-title">
+          Prueba de creación de tareas
+        </h2>
+
+        <form
+          onSubmit={handleCrear}
+          style={{
+            display: 'flex',
+            gap: '10px',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+        >
+          <input
+            type="text"
+            value={tituloNuevo}
+            onChange={event => setTituloNuevo(event.target.value)}
+            placeholder="Escribe una nueva tarea"
+            disabled={agregando}
+            aria-label="Título de la nueva tarea"
+            style={{
+              padding: '10px',
+              flex: '1 1 220px',
+              border: '1px solid #93c5fd',
+              borderRadius: '8px',
+            }}
+          />
+
+          <button
+            type="submit"
+            className="task-button"
+            disabled={agregando}
+          >
+            {agregando ? 'Guardando...' : 'Agregar tarea'}
+          </button>
+        </form>
+
+        {errorOperacion && (
+          <p
+            role="alert"
+            style={{
+              color: '#dc2626',
+              marginTop: '12px',
+            }}
+          >
+            {errorOperacion}
+          </p>
+        )}
+
+        {tareasLocales.length > 0 && (
+          <div style={{ marginTop: '18px' }}>
+            <h3>Tareas creadas durante esta sesión</h3>
+
+            <ul className="task-list">
+              {tareasLocales.map(tarea => (
+                <li key={tarea.id} className="task-item">
+                  {tarea.titulo}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
 
       <ActionButton onReview={reviewTasks} />
     </main>
