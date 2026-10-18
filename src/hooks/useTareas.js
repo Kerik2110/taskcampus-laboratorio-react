@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   obtenerTareas,
   crearTareaRemota,
+  actualizarTareaRemota,
 } from '../services/tareasService'
 
 function useTareas() {
@@ -10,14 +11,15 @@ function useTareas() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
 
-  // Estado exclusivo para la creación de tareas.
   const [agregando, setAgregando] = useState(false)
   const [errorOperacion, setErrorOperacion] = useState(null)
 
-  // Evita solicitudes POST simultáneas por doble clic.
+  // Control de tareas que se están actualizando.
+  const [actualizandoIds, setActualizandoIds] = useState([])
+  const actualizandoRef = useRef(new Set())
   const creandoRef = useRef(false)
 
-  // Cargar las diez tareas iniciales.
+  // GET: cargar las primeras diez tareas.
   useEffect(() => {
     const controller = new AbortController()
 
@@ -47,13 +49,14 @@ function useTareas() {
     return () => controller.abort()
   }, [])
 
-  // Crear una nueva tarea mediante POST.
+  // POST: crear una tarea.
   async function agregarTarea(titulo) {
     const tituloLimpio = titulo.trim()
 
-    // Validar antes de realizar la solicitud HTTP.
     if (!tituloLimpio) {
-      setErrorOperacion('El título de la tarea no puede estar vacío')
+      setErrorOperacion(
+        'El título de la tarea no puede estar vacío'
+      )
       return false
     }
 
@@ -66,10 +69,8 @@ function useTareas() {
     setErrorOperacion(null)
 
     try {
-      // JSONPlaceholder simula la creación.
       await crearTareaRemota(tituloLimpio)
 
-      // Creamos una identidad local única y estable.
       const nuevaTarea = {
         id: `local-${crypto.randomUUID()}`,
         remotoId: null,
@@ -77,7 +78,6 @@ function useTareas() {
         completada: false,
       }
 
-      // Actualización funcional: conserva las tareas anteriores.
       setTareas(previas => [...previas, nuevaTarea])
 
       return true
@@ -92,14 +92,68 @@ function useTareas() {
     }
   }
 
+  // PATCH: alternar entre pendiente y completada.
+  async function alternarTarea(id) {
+    const tarea = tareas.find(item => item.id === id)
+
+    if (!tarea) {
+      setErrorOperacion('No se encontró la tarea')
+      return false
+    }
+
+    // Impedir operaciones duplicadas sobre la misma tarea.
+    if (actualizandoRef.current.has(id)) {
+      return false
+    }
+
+    actualizandoRef.current.add(id)
+    setActualizandoIds(previas => [...previas, id])
+    setErrorOperacion(null)
+
+    const nuevoEstado = !tarea.completada
+
+    try {
+      // Solo las tareas originales tienen recurso remoto.
+      if (tarea.remotoId !== null) {
+        await actualizarTareaRemota(tarea.remotoId, {
+          completada: nuevoEstado,
+        })
+      }
+
+      // Actualización inmutable después del éxito.
+      setTareas(previas =>
+        previas.map(item =>
+          item.id === id
+            ? { ...item, completada: nuevoEstado }
+            : item
+        )
+      )
+
+      return true
+    } catch (err) {
+      // No cambiar el estado cuando falla la API.
+      setErrorOperacion(
+        err.message || 'No fue posible actualizar la tarea'
+      )
+      return false
+    } finally {
+      actualizandoRef.current.delete(id)
+
+      setActualizandoIds(previas =>
+        previas.filter(itemId => itemId !== id)
+      )
+    }
+  }
+
   return {
     tareas,
-    setTareas,
     cargando,
     error,
     agregando,
     errorOperacion,
+    actualizandoIds,
     agregarTarea,
+    alternarTarea,
   }
 }
 

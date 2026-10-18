@@ -11,26 +11,26 @@ import useTareas from './hooks/useTareas'
 function App() {
   const {
     tareas,
-    setTareas,
     cargando,
     error,
     agregando,
     errorOperacion,
+    actualizandoIds,
     agregarTarea,
+    alternarTarea,
   } = useTareas()
 
   const [filtro, setFiltro] = useState('todas')
   const [busqueda, setBusqueda] = useState('')
   const [tituloNuevo, setTituloNuevo] = useState('')
 
-  // Estadísticas derivadas.
+  // Estadísticas derivadas del estado principal.
   const total = tareas.length
   const completadas = tareas.filter(
     tarea => tarea.completada
   ).length
   const pendientes = total - completadas
 
-  // Filtrar y buscar simultáneamente.
   const tareasVisibles = tareas.filter(tarea => {
     const cumpleFiltro =
       filtro === 'todas' ||
@@ -44,24 +44,11 @@ function App() {
     return cumpleFiltro && cumpleBusqueda
   })
 
-  // Completar tareas: función provisional.
-  function handleCompletar(id) {
-    setTareas(previas =>
-      previas.map(tarea =>
-        tarea.id === id
-          ? { ...tarea, completada: !tarea.completada }
-          : tarea
-      )
-    )
-  }
-
-  // Ejecutar la creación mediante el hook.
   async function handleCrear(event) {
     event.preventDefault()
 
     const creada = await agregarTarea(tituloNuevo)
 
-    // Limpiar el campo solamente cuando POST tenga éxito.
     if (creada) {
       setTituloNuevo('')
     }
@@ -71,7 +58,6 @@ function App() {
     alert(`Tienes ${pendientes} tareas pendientes por revisar`)
   }
 
-  // Tareas creadas localmente para comprobar POST.
   const tareasLocales = tareas.filter(
     tarea => tarea.remotoId === null
   )
@@ -112,12 +98,12 @@ function App() {
         busqueda={busqueda}
         onCambiarFiltro={setFiltro}
         onCambiarBusqueda={setBusqueda}
-        onCompletar={handleCompletar}
+        onCompletar={alternarTarea}
         cargando={cargando}
         error={error}
       />
 
-      {/* Formulario temporal para comprobar la tarea 5 */}
+      {/* Formulario temporal de la tarea 5 */}
       <section className="card">
         <h2 className="section-title">
           Prueba de creación de tareas
@@ -135,10 +121,12 @@ function App() {
           <input
             type="text"
             value={tituloNuevo}
-            onChange={event => setTituloNuevo(event.target.value)}
+            onChange={event =>
+              setTituloNuevo(event.target.value)
+            }
             placeholder="Escribe una nueva tarea"
-            disabled={agregando}
             aria-label="Título de la nueva tarea"
+            disabled={agregando}
             style={{
               padding: '10px',
               flex: '1 1 220px',
@@ -156,18 +144,6 @@ function App() {
           </button>
         </form>
 
-        {errorOperacion && (
-          <p
-            role="alert"
-            style={{
-              color: '#dc2626',
-              marginTop: '12px',
-            }}
-          >
-            {errorOperacion}
-          </p>
-        )}
-
         {tareasLocales.length > 0 && (
           <div style={{ marginTop: '18px' }}>
             <h3>Tareas creadas durante esta sesión</h3>
@@ -181,6 +157,64 @@ function App() {
             </ul>
           </div>
         )}
+      </section>
+
+      {/* Sección temporal para comprobar PATCH */}
+      <section className="card">
+        <h2 className="section-title">
+          Prueba de cambio de estado
+        </h2>
+
+        <p style={{ marginBottom: '16px' }}>
+          Tareas pendientes: {pendientes} |
+          {' '}Completadas: {completadas}
+        </p>
+
+        {errorOperacion && (
+          <p
+            role="alert"
+            style={{
+              color: '#dc2626',
+              marginBottom: '12px',
+            }}
+          >
+            {errorOperacion}
+          </p>
+        )}
+
+        <ul className="task-list">
+          {tareas.map(tarea => {
+            const actualizando =
+              actualizandoIds.includes(tarea.id)
+
+            return (
+              <li key={tarea.id} className="task-item">
+                <span>
+                  {tarea.titulo}
+                  {' — '}
+                  <strong>
+                    {tarea.completada
+                      ? 'Completada'
+                      : 'Pendiente'}
+                  </strong>
+                </span>
+
+                <button
+                  type="button"
+                  className="task-button-secondary"
+                  disabled={actualizando}
+                  onClick={() => alternarTarea(tarea.id)}
+                >
+                  {actualizando
+                    ? 'Actualizando...'
+                    : tarea.completada
+                      ? 'Marcar pendiente'
+                      : 'Completar'}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
       </section>
 
       <ActionButton onReview={reviewTasks} />
