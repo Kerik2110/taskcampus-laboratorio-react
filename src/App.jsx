@@ -6,39 +6,30 @@ import Header from './components/Header'
 import TaskSummary from './components/TaskSummary'
 import TaskList from './components/TaskList'
 import ActionButton from './components/ActionButton'
-
-const tareasIniciales = [
-  {
-    id: 'local-1',
-    remotoId: null,
-    titulo: 'Aprender qué es React',
-    completada: false,
-  },
-  {
-    id: 'local-2',
-    remotoId: null,
-    titulo: 'Crear proyecto con Vite',
-    completada: false,
-  },
-  {
-    id: 'local-3',
-    remotoId: null,
-    titulo: 'Practicar JSX',
-    completada: false,
-  },
-]
+import useTareas from './hooks/useTareas'
 
 function App() {
-  const [tareas, setTareas] = useState(tareasIniciales)
+  // Las tareas ahora provienen de nuestro hook.
+  const {
+    tareas,
+    setTareas,
+    cargando,
+    error,
+  } = useTareas()
+
   const [filtro, setFiltro] = useState('todas')
   const [busqueda, setBusqueda] = useState('')
 
-  // Valores derivados del estado principal.
+  // Contadores derivados de las tareas actuales.
   const total = tareas.length
-  const completadas = tareas.filter(t => t.completada).length
+
+  const completadas = tareas.filter(
+    tarea => tarea.completada
+  ).length
+
   const pendientes = total - completadas
 
-  // Aplicamos simultáneamente el filtro y la búsqueda.
+  // Aplicamos filtros y búsqueda simultáneamente.
   const tareasVisibles = tareas.filter(tarea => {
     const cumpleFiltro =
       filtro === 'todas' ||
@@ -52,13 +43,16 @@ function App() {
     return cumpleFiltro && cumpleBusqueda
   })
 
-  // Implementación local provisional.
-  // Después usaremos el hook y la API.
+  // Cambio de estado local provisional.
+  // En la tarea 6 lo conectaremos con PATCH.
   function handleCompletar(id) {
     setTareas(previas =>
       previas.map(tarea =>
         tarea.id === id
-          ? { ...tarea, completada: !tarea.completada }
+          ? {
+              ...tarea,
+              completada: !tarea.completada,
+            }
           : tarea
       )
     )
@@ -75,6 +69,23 @@ function App() {
         description="Gestor de tareas académicas"
       />
 
+      {/* Información sobre la conexión con la API */}
+      {cargando && (
+        <p role="status">Cargando tareas desde la API...</p>
+      )}
+
+      {error && (
+        <p role="alert" style={{ color: '#dc2626' }}>
+          Error: {error}
+        </p>
+      )}
+
+      {!cargando && !error && (
+        <p role="status">
+          Conexión exitosa: {total} tareas cargadas desde la API.
+        </p>
+      )}
+
       <TaskSummary
         total={pendientes}
         pendientes={pendientes}
@@ -89,6 +100,8 @@ function App() {
         onCambiarFiltro={setFiltro}
         onCambiarBusqueda={setBusqueda}
         onCompletar={handleCompletar}
+        cargando={cargando}
+        error={error}
       />
 
       <ActionButton onReview={reviewTasks} />
