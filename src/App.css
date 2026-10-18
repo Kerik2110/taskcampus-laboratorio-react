@@ -1,108 +1,335 @@
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #ffffff;
-  color: #0f172a;
+/* Layout general */
+* {
+  box-sizing: border-box;
 }
 
-#root {
-  display: flex;
-  justify-content: center;
-  padding: 40px 20px;
+body {
+  margin: 0;
+  background-color: #f4f6f8;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #333;
 }
 
 .app-container {
-  width: 100%;
-  max-width: 900px;
-  background-color: #ffffff;
-  border: 1px solid #dbeafe;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.08);
+  max-width: 720px;
+  margin: 30px auto;
+  padding: 0 16px;
 }
 
-.header {
-  text-align: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid #bfdbfe;
-}
-
-.header-title {
-  margin: 0;
-  font-size: 2.5rem;
-  color: #1d4ed8;
-}
-
-.header-description {
-  margin-top: 10px;
-  font-size: 1.1rem;
-  color: #475569;
-}
-
+/* Tarjetas y secciones */
 .card {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 12px;
-  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 18px;
   margin-bottom: 20px;
 }
+
 .section-title {
   margin-top: 0;
-  color: #1e3a8a;
+  margin-bottom: 14px;
+  font-size: 1.15rem;
+  color: #222;
 }
+
+/* Navegación por pestañas */
+.navigation-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 8px;
+}
+
+.nav-tab {
+  background: #eee;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.nav-tab:hover {
+  background: #e2e2e2;
+}
+
+.nav-tab.active {
+  background: #0d6efd;
+  color: #fff;
+}
+
+/* Panel de Resumen */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-item {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 10px;
+  text-align: center;
+}
+
+.summary-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-size: 1.4rem;
+  color: #111;
+}
+
+.progress-container {
+  margin-top: 10px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #198754;
+  transition: width 0.2s ease-in-out;
+}
+
+/* Filtros y buscador */
+.filters-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+}
+
+.input-busqueda {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+.btn-limpiar-busqueda {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-filtro {
+  flex: 1;
+  padding: 7px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-filtro.active {
+  background: #0d6efd;
+  color: #fff;
+  border-color: #0d6efd;
+}
+
+/* Lista de tareas */
 .task-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .task-item {
-  background-color: #ffffff;
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin-bottom: 10px;
-  color: #1e293b;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #eee;
 }
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-checkbox {
+  cursor: pointer;
+}
+
+.task-titulo {
+  flex: 1;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.task-item.completada .task-titulo {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.input-edicion {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 0.9rem;
+  border: 1px solid #0d6efd;
+  border-radius: 4px;
+}
+
 .task-button {
-  background-color: #2563eb;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.btn-eliminar {
+  background: #fff0f0;
+  border: 1px solid #ffcccc;
+  color: #d63384;
+  padding: 4px 8px;
+}
+
+.btn-eliminar:hover {
+  background: #ffdada;
+}
+
+/* Formulario */
+.task-form .form-group {
+  display: flex;
+  gap: 8px;
+}
+
+.input-tarea {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 0.9rem;
+}
+
+.input-tarea.input-error {
+  border-color: #dc3545;
+}
+
+.btn-crear {
+  background: #0d6efd;
   color: white;
   border: none;
-  border-radius: 10px;
-  padding: 10px 18px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.20);
+  padding: 8px 16px;
+  font-weight: bold;
 }
 
-.task-button:hover {
-  background-color: #1d4ed8;
-  transform: translateY(-1px);
+.btn-crear:disabled {
+  background: #aaa;
+  cursor: not-allowed;
 }
 
-.task-button:active {
-  transform: scale(0.98);
+.mensaje-error {
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin: 6px 0 0 0;
 }
 
-.task-button-secondary {
-  background-color: #ffffff;
-  color: #2563eb;
-  border: 1px solid #93c5fd;
-  border-radius: 10px;
-  padding: 8px 14px;
+.mensaje-vacio {
+  text-align: center;
+  color: #777;
+  padding: 15px 0;
   font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.25s ease;
 }
 
-.task-button-secondary:hover {
-  background-color: #eff6ff;
-  border-color: #2563eb;
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 12px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  padding: 18px;
+}
+
+.modal-title {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  color: #b02a37;
+}
+
+.modal-mensaje {
+  font-size: 0.9rem;
+  margin: 0 0 8px 0;
+}
+
+.modal-advertencia {
+  font-size: 0.8rem;
+  color: #777;
+  margin: 0 0 14px 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-cancelar {
+  background: #e9ecef;
+  border: 1px solid #ced4da;
+  padding: 6px 12px;
+}
+
+.btn-confirmar-eliminar {
+  background: #dc3545;
+  border: 1px solid #dc3545;
+  color: #fff;
+  padding: 6px 12px;
+}
+
+.btn-confirmar-eliminar:disabled,
+.btn-cancelar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
